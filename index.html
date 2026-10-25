@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moje Pexeso</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; user-select: none; }
+        h1 { color: #333; margin-bottom: 10px; }
+        .score { font-size: 18px; margin-bottom: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 500px; width: 95%; }
+        .card { aspect-ratio: 1; background-color: #0070f3; border-radius: 8px; cursor: pointer; position: relative; transform-style: preserve-3d; transition: transform 0.5s; }
+        .card.flipped { transform: rotateY(180deg); }
+        .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 8px; box-sizing: border-box; }
+        .card-back { background-color: #0070f3; border: 2px solid #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .card-front { background-color: #fff; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; padding: 10px; text-align: center; font-weight: bold; font-size: 14px; word-break: break-word; border: 2px solid #0070f3; }
+        .card-front img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+        .matched { visibility: hidden; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+    <h1>Moje Pexeso</h1>
+    <div class="score">Počet tahů: <span id="moves">0</span></div>
+    <div class="grid" id="grid"></div>
+
+    <script>
+        // TADY DEFINEJTE SVÉ DVOJICE (Obrázek + Text)
+        // Každá dvojice musí mít stejné číslo 'id'
+        const pairs = [
+            { id: 1, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000135-3bebf3bec1/1000042727.webp
+' },
+            { id: 1, type: 'text', value: 'Pražský hrad' },
+            
+            { id: 2, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000137-a5b94a5b96/1000042728.webp
+' },
+            { id: 2, type: 'text', value: 'Orlík' },
+            
+            { id: 3, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000139-e1822e1825/1000042729.webp
+' },
+            { id: 3, type: 'text', value: 'Karlštejn' },
+            
+            { id: 4, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000141-6418464186/1000042730.webp
+' },
+            { id: 4, type: 'text', value: 'Zvíkov' },
+            
+            { id: 5, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000001-ef096ef098/1000023276.webp
+' },
+            { id: 5, type: 'text', value: 'Hluboká' },
+            
+            { id: 6, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000143-99b8c99b8e/1000042732.webp
+' },
+            { id: 6, type: 'text', value: 'Lednice' },
+            
+            { id: 7, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000147-94a2a94a2c/1000042853.webp
+' },
+            { id: 7, type: 'text', value: 'Jindřichův Hradec' },
+            
+            { id: 8, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000145-854298542a/1000042733.webp
+' },
+            { id: 8, type: 'text', value: 'Český Krumlov' }
+        ];
+
+        // Zamíchání kartiček
+        pairs.sort(() => 0.5 - Math.random());
+
+        const grid = document.getElementById('grid');
+        let moves = 0;
+        let flippedCards = [];
+        let matchedCount = 0;
+
+        function createBoard() {
+            pairs.forEach((cardData, index) => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.dataset.id = cardData.id;
+                card.dataset.index = index;
+
+                const back = document.createElement('div');
+                back.classList.add('card-back');
+
+                const front = document.createElement('div');
+                front.classList.add('card-front');
+
+                // Podle typu karty vložíme buď obrázek, nebo text
+                if (cardData.type === 'image') {
+                    const img = document.createElement('img');
+                    img.src = cardData.value;
+                    front.appendChild(img);
+                } else {
+                    front.innerText = cardData.value;
+                }
+
+                card.appendChild(back);
+                card.appendChild(front);
+                grid.appendChild(card);
+
+                card.addEventListener('click', flipCard);
+            });
+        }
+
+        function flipCard() {
+            if (flippedCards.length < 2 && !this.classList.contains('flipped')) {
+                this.classList.add('flipped');
+                flippedCards.push(this);
+
+                if (flippedCards.length === 2) {
+                    moves++;
+                    document.getElementById('moves').innerText = moves;
+                    setTimeout(checkMatch, 1000);
+                }
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            
+            // Kontrola, zda mají karty stejné ID (patří k sobě)
+            if (card1.dataset.id === card2.dataset.id) {
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                matchedCount += 2;
+                if (matchedCount === pairs.length) {
+                    alert(`Gratulujeme! Vyhráli jste na ${moves} tahů.`);
+                }
+            } else {
+                card1.classList.remove('flipped');
+                card2.classList.remove('flipped');
+            }
+            flippedCards = [];
+        }
+
+        createBoard();
+    </script>
+</body>
+</html>
