@@ -5,53 +5,106 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Moje Pexeso</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; user-select: none; }
-        h1 { color: #333; margin-bottom: 10px; }
-        .score { font-size: 18px; margin-bottom: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 500px; width: 95%; }
+        body { font-family: Arial, sans-serif; background-color: #f0f2f5; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; user-select: none; }
+        h1 { color: #333; margin-bottom: 5px; }
+        .score { font-size: 18px; margin-bottom: 15px; }
+        
+        /* Mřížka upravená pro 40 kartiček (8 sloupců na PC, méně na mobilu) */
+        .grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; max-width: 900px; width: 100%; }
+        
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: repeat(5, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+        }
+
         .card { aspect-ratio: 1; background-color: #0070f3; border-radius: 8px; cursor: pointer; position: relative; transform-style: preserve-3d; transition: transform 0.5s; }
         .card.flipped { transform: rotateY(180deg); }
         .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; border-radius: 8px; box-sizing: border-box; }
         .card-back { background-color: #0070f3; border: 2px solid #fff; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .card-front { background-color: #fff; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; padding: 5px; text-align: center; font-weight: bold; font-size: 13px; word-break: break-word; border: 2px solid #0070f3; }
+        .card-front { background-color: #fff; transform: rotateY(180deg); display: flex; align-items: center; justify-content: center; padding: 4px; text-align: center; font-weight: bold; font-size: 11px; word-break: break-word; border: 2px solid #0070f3; }
         .card-front img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
         .matched { visibility: hidden; pointer-events: none; }
+        
+        /* Tlačítko Reset */
+        .reset-btn { margin-top: 25px; padding: 12px 24px; font-size: 16px; font-weight: bold; color: white; background-color: #28a745; border: none; border-radius: 25px; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: background-color 0.2s, transform 0.1s; }
+        .reset-btn:hover { background-color: #218838; }
+        .reset-btn:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
 
     <h1>Moje Pexeso</h1>
     <div class="score">Počet tahů: <span id="moves">0</span></div>
+    
     <div class="grid" id="grid"></div>
+    
+    <button class="reset-btn" onclick="resetGame()">Hrát znovu</button>
 
     <script>
+        // SEZNAM 20 DVOJIC
         const pairs = [
-            { id: 1, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000135-3bebf3bec1/1000042727.webp' },
+            { id: 1, type: 'image', value: 'https://cbaul-cdnwnd.com' },
             { id: 1, type: 'text', value: 'Pražský hrad' },
             
-            { id: 2, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000137-a5b94a5b96/1000042728.webp' },
+            { id: 2, type: 'image', value: 'https://cbaul-cdnwnd.com' },
             { id: 2, type: 'text', value: 'Orlík' },
             
-            { id: 3, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000139-e1822e1825/1000042729.webp' },
+            { id: 3, type: 'image', value: 'https://cbaul-cdnwnd.com' },
             { id: 3, type: 'text', value: 'Karlštejn' },
             
-            { id: 4, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000141-6418464186/1000042730.webp' },
+            { id: 4, type: 'image', value: 'https://cbaul-cdnwnd.com' },
             { id: 4, type: 'text', value: 'Zvíkov' },
             
-            { id: 5, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000001-ef096ef098/1000023276.webp' },
+            { id: 5, type: 'image', value: 'https://cbaul-cdnwnd.com' },
             { id: 5, type: 'text', value: 'Hluboká' },
             
-            { id: 6, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000143-99b8c99b8e/1000042732.webp' },
+            { id: 6, type: 'image', value: 'https://cbaul-cdnwnd.com' },
             { id: 6, type: 'text', value: 'Lednice' },
             
-            { id: 7, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000147-94a2a94a2c/1000042853.webp' },
+            { id: 7, type: 'image', value: 'https://cbaul-cdnwnd.com' },
             { id: 7, type: 'text', value: 'Jindřichův Hradec' },
             
-            { id: 8, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000145-854298542a/1000042733.webp' },
-            { id: 8, type: 'text', value: 'Český Krumlov' }
+            { id: 8, type: 'image', value: 'https://cbaul-cdnwnd.com' },
+            { id: 8, type: 'text', value: 'Český Krumlov' },
+            
+            { id: 9, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000149-29e0329e05/1000042734.webp' },
+            { id: 9, type: 'text', value: 'Pravčická brána' },
+            
+            { id: 10, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000151-8b47d8b47f/1000042735.webp' },
+            { id: 10, type: 'text', value: 'Tiské stěny' },
+            
+            { id: 11, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000153-7901b7901d/1000042736.webp' },
+            { id: 11, type: 'text', value: 'Hrubá skála' },
+            
+            { id: 12, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000155-5ad5d5ad60/1000042854.webp' },
+            { id: 12, type: 'text', value: 'Pálavské vrchy' },
+            
+            { id: 13, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000157-991c4991c6/1000042737.webp' },
+            { id: 13, type: 'text', value: 'Švihov' },
+            
+            { id: 14, type: 'image', value: 'ODKAZ_NA_OBRAZEK_14' },
+            { id: 14, type: 'text', value: 'Rábí' },
+            
+            { id: 15, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000161-37b5237b54/1000042739.webp' },
+            { id: 15, type: 'text', value: 'Kost' },
+            
+            { id: 16, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000163-c6e9cc6e9e/1000042740.webp' },
+            { id: 16, type: 'text', value: 'Trosky' },
+            
+            { id: 17, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000165-54aad54aaf/1000042855.webp' },
+            { id: 17, type: 'text', value: 'Kutná Hora - sv. Barbora' },
+            
+            { id: 18, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000167-cf0facf0fc/1000042856.webp' },
+            { id: 18, type: 'text', value: 'Chrám svatého Víta' },
+            
+            { id: 19, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000169-41a7a41a7c/1000042741.webp' },
+            { id: 19, type: 'text', value: 'Orloj - Praha' },
+            
+            { id: 20, type: 'image', value: 'https://ffe62a8958.cbaul-cdnwnd.com/6db8bb8c0bee1e71b39eb24bc2246e14/200000171-6b9a06b9a3/1000042857.webp' },
+            { id: 20, type: 'text', value: 'Orloj - Olomouc' }
         ];
-
-        pairs.sort(() => 0.5 - Math.random());
 
         const grid = document.getElementById('grid');
         let moves = 0;
@@ -59,6 +112,9 @@
         let matchedCount = 0;
 
         function createBoard() {
+            grid.innerHTML = ''; // Vyčištění plochy před vykreslením
+            pairs.sort(() => 0.5 - Math.random()); // Náhodné zamíchání
+
             pairs.forEach((cardData, index) => {
                 const card = document.createElement('div');
                 card.classList.add('card');
@@ -108,7 +164,9 @@
                 card2.classList.add('matched');
                 matchedCount += 2;
                 if (matchedCount === pairs.length) {
-                    alert(`Gratulujeme! Vyhráli jste na ${moves} tahů.`);
+                    setTimeout(() => {
+                        alert(`Gratulujeme! Zvládli jste celé pexeso na ${moves} tahů.`);
+                    }, 500);
                 }
             } else {
                 card1.classList.remove('flipped');
@@ -117,6 +175,15 @@
             flippedCards = [];
         }
 
+        function resetGame() {
+            moves = 0;
+            matchedCount = 0;
+            flippedCards = [];
+            document.getElementById('moves').innerText = moves;
+            createBoard();
+        }
+
+        // První spuštění hry při načtení stránky
         createBoard();
     </script>
 </body>
